@@ -8,4 +8,4 @@ NOKIA	PDC		MOB08	RD
 
 3. Cambio en NOtas
 
-4. cambio en branch FeatureA SOLO-MAIN
+4. cambio en branch  
