@@ -1,0 +1,159 @@
+
+================= objetivo ===================================
+Traer configuracion de TEF_OAM VRF 1000206 desde PDC NOKIA TOL INDUTRIAL (TOLBUE-MEX9295-EA 10.190.3.156 Nokia 7750SR) hacia los nuevos PDCs CISCO
+
+
+
+================= equipos involucrados ===================================
+MXTOLM01RTDCLFIXC01 - 10.150.244.12 - NCS-5501-SE
+MXTOLM01RTDCLFIXC02 - 10.150.244.13 - NCS-5501-SE
+
+================= script ===================================
+conf t 
+!
+extcommunity-set rt RP_EXPORT_TEF_OAM_RT
+# community "HUAWEI_OAM_TUL" members "target:65000:120090"
+# community "HUAWEI_OAM_MER" members "target:65000:120080"
+# community "HUAWEI_OAM_TLAQUE" members "target:65000:120050"
+# community "HUAWEI_OAM_GONZ" members "target:65000:120040"
+  65000:120090,
+  65000:120080,
+  65000:120050,
+  65000:120040
+end-set
+!
+prefix-set RP_EXPORT_TEF_OAM_PREFIXES
+10.221.80.0/20 le 32,
+10.221.96.0/20 le 32,
+10.221.112.0/21 le 32,
+10.234.45.77/32,
+10.234.45.243/32
+end-set
+!
+
+!
+prefix-set ATT_OAM_U2020_PREFIXES
+10.32.219.0/24,
+10.32.248.0/24,
+10.32.250.192/26,
+10.39.4.192/26,
+10.39.32.160/27,
+10.150.46.192/27,
+10.150.123.160/27,
+10.150.171.192/27,
+10.150.206.0/26,
+10.150.206.64/26,
+10.150.208.128/26,
+10.150.208.192/26,
+10.150.212.128/26
+end-set
+!
+!
+route-policy RP_IMPORT_TEF_OAM
+  if destination in ATT_OAM_U2020_PREFIXES and extcommunity rt matches-any RP_EXPORT_TEF_OAM_RT then
+    pass
+  elseif destination in ATT_OAM_U2020_PREFIXES and extcommunity rt matches-any (7438:1234905) then
+    drop
+!!!!!!!!!!!!
+ elseif destination in PL_OAM_TO_3G_TEF and extcommunity rt matches-any ECS_RTS_ATT_OAM then
+    pass
+  elseif extcommunity rt matches-any ECS_RTS_ATT_OAM then
+    drop
+!!!!!!!!!!!
+  elseif extcommunity rt matches-any (7438:1234905) then
+    pass
+  else
+    drop
+  endif
+end-policy
+!
+
+
+route-policy RP_EXPORT_TEF_OAM
+  if destination in RP_EXPORT_TEF_OAM_PREFIXES then
+    set extcommunity rt RP_EXPORT_TEF_OAM_RT additive
+!!!!!!!
+elseif  destination in PL_3G-TEF-OAM_TO_OAM-ATT then
+    set extcommunity rt To_ATT_OAM additive
+!!!!!!!!
+  else
+    pass
+  endif
+end-policy
+
+
+commit
+
+
+
+vrf TEF_3G_OAM_IN
+ address-family ipv4 unicast
+ import route-policy RP_IMPORT_TEF_OAM
+  import route-target
+   7438:2234905
+   65000:220090
+   65000:220080
+   65000:220050
+   65000:220040
+  !
+  export route-policy RP_EXPORT_TEF_OAM
+  export route-target
+   7438:2234905
+  !
+ !
+!
+commit
+################################################################################
+##################	         rollback	              ##################
+################################################################################
+
+conf t 
+
+
+vrf TEF_3G_OAM_IN
+ address-family ipv4 unicast
+  no import route-policy RP_IMPORT_TEF_OAM
+  import route-policy FROM_ATT_OAM_TO_TEF_3G_OAM_IN
+  import route-target
+   7438:2234905
+   65000:2000000
+   no 65000:220040
+   no 65000:220050
+   no 65000:220080
+   no 65000:220090
+
+  !
+  no export route-policy RP_EXPORT_TEF_OAM
+  export route-policy RP_3G-TEF-OAM_TO_ATT-OAM
+  export route-target
+   7438:2234905
+   no 65000:220090
+  !
+ !
+!
+
+commit
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+no route-policy RP_IMPORT_TEF_OAM
+
+no route-policy RP_EXPORT_TEF_OAM
+
+commit
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+no prefix-set RP_EXPORT_TEF_OAM_PREFIXES
+!
+no prefix-set ATT_OAM_U2020_PREFIXES
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!
+ no extcommunity-set rt RP_EXPORT_TEF_OAM_RT
+!
+commit
+
+
+
+
