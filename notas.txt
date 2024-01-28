@@ -1,0 +1,7 @@
+1. escoger que se debe enviar desde MOB08 hacia el PDC.
+tomar de referncia PDC:
+NOKIA	PDC		MOB08	RD
+1000205	TEF_3G_IuB	ATT_3G 	7438:2215905
+
+ 
+2. reviar en EDGE RT en VRF de ATT y VRF de TEF. la VRF interna de ATT no debe usar los RTs de TEF.
