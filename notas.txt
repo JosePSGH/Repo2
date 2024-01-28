@@ -5,3 +5,5 @@ NOKIA	PDC		MOB08	RD
 
  
 2. reviar en EDGE RT en VRF de ATT y VRF de TEF. la VRF interna de ATT no debe usar los RTs de TEF.
+
+3. Cambio en NOtas
